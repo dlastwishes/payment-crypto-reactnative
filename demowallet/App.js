@@ -1,49 +1,75 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
+import React, { Component } from 'react';
+import { TextInput , Alert , Button , Text, View } from 'react-native';
+import { Operation , TransactionBuilder , Transaction , Asset,  Keypair , Network , Server } from '@pigzbe/react-native-stellar-sdk';
 
-import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View} from 'react-native';
+Network.useTestNetwork();
+const server = new Server('https://horizon-testnet.stellar.org');
+const sourceKeys = Keypair.fromSecret("SA47Q3XQNDZERCMGLM3O4PICLFUHYIJMPQXYHO3QZV27XBVQ3MADPDTF");
+let sourceAccount ,transaction;
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android:
-    'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
+export default class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {text: 'test'  , publickey1 : 'test test'};
+  }
 
-type Props = {};
-export default class App extends Component<Props> {
+
+  _getAcc() {
+    Alert.alert(server.loadAccount(this.state.destinationId));
+  }
+
+  _sendMoney() {
+
+    server.loadAccount(this.state.destinationId)
+   
+    .then(function() {
+    
+    return server.loadAccount(sourceKeys.publicKey());
+
+    })
+   
+    .then(function(sourceAccount) {
+   
+      transaction = new TransactionBuilder(sourceAccount)
+        .addOperation(Operation.payment({
+          destination: this.state.destinationId,
+          asset: Asset.native(),
+          amount: "100"
+        })).build();
+
+        alert.alert('hello 3');
+   
+    transaction.sign(sourceKeys);
+   
+    return  server.submitTransaction(transaction);
+    })
+   
+    .then(function(result) {
+   
+      Alert.alert('Submit Transaction Success');
+    })
+   
+    .catch(function(error) {
+    Alert.alert('error');
+    });
+  }
+
+  checkState1 = () => {
+    this.setState({ publickey1 : Keypair.fromSecret(this.state.text).publicKey()})
+  }
+
   render() {
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>Welcome to React Native!</Text>
-        <Text style={styles.instructions}>To get started, edit App.js</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
+      <View>
+      <TextInput onChangeText={(text) => this.setState({text})} placeholder='Secret Key'/>
+      <Button onPress=
+      {
+        this.checkState1
+      } 
+    title='click me'/>
+      <Text> {this.state.publickey1} </Text>
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
