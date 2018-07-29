@@ -1,74 +1,73 @@
 import React, { Component } from 'react';
-import { TextInput , Alert , Button , Text, View } from 'react-native';
-import { Operation , TransactionBuilder , Transaction , Asset,  Keypair , Network , Server } from '@pigzbe/react-native-stellar-sdk';
+import { StyleSheet ,  TextInput , Alert , Button , Text, View } from 'react-native';
+import {Asset , Operation, TransactionBuilder , Keypair , Network , Server } from '@pigzbe/react-native-stellar-sdk';
+
+import stylecomp from './others/styles';
 
 Network.useTestNetwork();
 const server = new Server('https://horizon-testnet.stellar.org');
-const sourceKeys = Keypair.fromSecret("SA47Q3XQNDZERCMGLM3O4PICLFUHYIJMPQXYHO3QZV27XBVQ3MADPDTF");
-let sourceAccount ,transaction;
 
 export default class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {text: 'test'  , publickey1 : 'test test'};
+    this.state = {
+    text: ''  , 
+    publickey1 : 'Here will show your Public Key' , 
+    newPubKey : 'Here will show your new Public Key' , 
+    newSecKey : 'Here will show your new Secret Key (Keep it safe!!)' ,
+    destinationKey : ''};
   }
 
 
-  _getAcc() {
-    Alert.alert(server.loadAccount(this.state.destinationId));
+  _getAcc = () => {
+   server.loadAccount(this.state.newPubKey).then( (account) => { Alert.alert(account) })
   }
 
-  _sendMoney() {
+  _sendMoney = () => {
+    server.loadAccount(this.state.publickey1)
+  .then((account) => {
+    const transaction = new TransactionBuilder(account).addOperation(Operation.payment(
+      {
+        destination: destinationKey,
+        asset: Asset.native(),
+        amount: '100' ,
+      }
+    )).build()}).then((result) => { Alert.alert('Hello World') } ).catch( (error) => {Alert.alert('it erro')})
+  }
 
-    server.loadAccount(this.state.destinationId)
-   
-    .then(function() {
+  newAcc = () => {
+    const keypair = Keypair.randomAsync().then(keypair => {
+      this.setState({ newPubKey : keypair.publicKey()});
+      this.setState({newSecKey : keypair.secret()})
+      this.setState({destinationKey : keypair.publicKey()})
+  });
     
-    return server.loadAccount(sourceKeys.publicKey());
-
-    })
-   
-    .then(function(sourceAccount) {
-   
-      transaction = new TransactionBuilder(sourceAccount)
-        .addOperation(Operation.payment({
-          destination: this.state.destinationId,
-          asset: Asset.native(),
-          amount: "100"
-        })).build();
-
-        alert.alert('hello 3');
-   
-    transaction.sign(sourceKeys);
-   
-    return  server.submitTransaction(transaction);
-    })
-   
-    .then(function(result) {
-   
-      Alert.alert('Submit Transaction Success');
-    })
-   
-    .catch(function(error) {
-    Alert.alert('error');
-    });
   }
 
-  checkState1 = () => {
+  checkPublic = () => {
     this.setState({ publickey1 : Keypair.fromSecret(this.state.text).publicKey()})
   }
 
   render() {
     return (
       <View>
+        <Text> Already Account </Text>
       <TextInput onChangeText={(text) => this.setState({text})} placeholder='Secret Key'/>
       <Button onPress=
       {
-        this.checkState1
+        this.checkPublic
       } 
-    title='click me'/>
-      <Text> {this.state.publickey1} </Text>
+    title='click me to get public key'/>
+    <Text> {this.state.publickey1} </Text>
+      <Text> Don't have stellar account </Text>
+      <Button onPress={this.newAcc} title='get new account'/>
+      <Text> Public Key  {this.state.newPubKey} </Text>
+      <Text> ---------------- </Text>
+      <Text>Secret Key : {this.state.newSecKey} </Text>
+      <Text> Transfer Money (XLM) </Text>
+      <Button onPress={this._getAcc} title='Send Money'/>
       </View>
+      
     );
   }
 }
